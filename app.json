@@ -2,7 +2,7 @@
   "name": "my-heroku-app",
   "description": "A simple PHP app deployed from a Git repository",
   "repository": {
-    "url": "https://github.com/your-username/my-heroku-app.git"
+    "url": "https://github.com/melodic456/tele-business.git"
   },
   "buildpacks": [
     {
