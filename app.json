@@ -1,0 +1,12 @@
+{
+  "name": "my-heroku-app",
+  "description": "A simple PHP app deployed from a Git repository",
+  "repository": {
+    "url": "https://github.com/your-username/my-heroku-app.git"
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ]
+}
