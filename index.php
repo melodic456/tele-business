@@ -3,6 +3,7 @@
 $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
 $admin = "7374728124"; // userID of your account
 
+
 // BOT
 function bot($method, $datas = [])
 {
@@ -27,7 +28,11 @@ if (isset($update)) {
         @$caption = $message->caption;
         //file id
         @$sticker_id = $message->sticker->file_id;
-        @$photo_id = $message->photo[count($message->photo) - 1]->file_id;
+//        @$photo_id = $message->photo[count($message->photo) - 1]->file_id ?? null;
+	@$photo_id = null;
+	if (isset($message->photo) && is_array($message->photo)) {
+            @$photo_id = $message->photo[count($message->photo) - 1]->file_id;
+        }
         @$video_id = $message->video->file_id;
         @$voice_id = $message->voice->file_id;
         @$file_id = $message->document->file_id;
@@ -183,15 +188,50 @@ if (isset($message) and $chat_id == $admin) {
     }
 }
 
+// $originalString = "Hello";
 // Handle messages to Bussiness Account
+$send_reply = "yes";
 if (isset($b_text)) {
     foreach ($db['data'] as $item) {
         if ($item['text'] == $b_text) {
+            $user_messages = [];
+            if (isset($b_text)) {
+                $current_time = time();
+                $user_id = $b_chat_id;
+                if (!isset($user_messages[$user_id])) {
+                    $user_messages[$user_id] = [];
+                }
+                $user_messages[$user_id][] = ['text' => $b_text, 'time' => $current_time];
+                
+                
+                foreach ($user_messages[$user_id] as $index => $message) {
+                    if ($message['text'] === $b_text && $current_time - $message['time'] < 300) {
+                        // echo "Not ready";
+                        $send_reply = "no";
+                        // $originalString = "Hi";
+                        break;
+                    }
+                }
+                file_put_contents('user_messages.json', json_encode($user_messages));
+            }
+
+            // if ($send_reply === "no") {
+            //     break;
+            // }
+            // if ($send_reply === "no") {
+            //     break; // Skip sending a reply if the condition is met
+            // }
             foreach ($item['answers'] as $index => $answer) {
+                
+                    // The string has changed, so perform additional actions here
+                //     echo "The string has been modified!";
+                // } else {
+                    // echo "The string remains the same.";
+                
                 // check message type
                 switch ($answer["type"]) {
                     case "text":
-                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $send_reply === "no" ? $answer['content'] : "Not ready", 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
                         break;
                     case "sticker":
                         bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
@@ -226,7 +266,9 @@ if (isset($b_text)) {
 
                         break;
                 }
+                // }
             }
         }
     }
 }
+// $send_reply = "yes";
