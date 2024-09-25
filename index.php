@@ -7,6 +7,17 @@ $admin = "7374728124"; // userID of your account
 
 // Added Functions
 
+function removeElementFromArray(&$array, $valueToRemove) {
+    $key = array_search($valueToRemove, $array);
+    if ($key !== false) {
+        unset($array[$key]);
+        return true; // Indicate successful removal
+    } else {
+        return false; // Indicate that the value was not found
+    }
+}
+
+
 function loadData() {
     $filePath = 'messages.json'; 
     if (file_exists($filePath)) {
@@ -74,7 +85,7 @@ if (isset($update)) {
 $db =  json_decode(file_get_contents('db.json'), true);
 $step = $db['step'];
 // keyboards
-$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]]]]);
+$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]], [['text' => "Add new Admins"]], [['text' => "Remove an Admin"]]]]);
 $back = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Back 🔙"]]]]);
 // ================================================ \\
 
@@ -119,6 +130,37 @@ if (isset($message) and $chat_id == $admin) {
         bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Interval set to {$text} seconds", 'reply_markup' => $home]);
         $db['step'] = "";
         file_put_contents("db.json", json_encode($db));
+    }
+
+    elseif ($text == 'Add new Admins') {
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Enter the user ID of the new admin", 'reply_markup' => $back]);
+        $db['step'] = "add-admin";
+        file_put_contents("db.json", json_encode($db));
+    } elseif ($step == 'add-admin') {
+        if (!in_array($text, $db['admins'])) {
+            $db['admins'][] = $text;
+            bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Admin added successfully!", 'reply_markup' => $home]);
+            $db['step'] = "";
+            file_put_contents("db.json", json_encode($db));
+        } else {
+            bot('sendMessage', ['chat_id' => $chat_id, 'text' => "This user is already an admin!", 'reply_markup' => $home]);
+        }
+    }
+
+    elseif ($text == 'Remove an Admin') {
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Enter the user ID of the admin you want to remove", 'reply_markup' => $back]);
+        $db['step'] = "remove-admin";
+        file_put_contents("db.json", json_encode($db));
+    } elseif ($step == 'remove-admin') {
+        if (in_array($text, $db['admins'])) {
+            removeElementFromArray($db['admins'], $text);
+            // $db['admins'] = array_remove($db['admins'], $text);
+            bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Admin Removed successfully!", 'reply_markup' => $home]);
+            $db['step'] = "";
+            file_put_contents("db.json", json_encode($db));
+        } else{
+            bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Admin not found!", 'reply_markup' => $home]);
+        }
     }
     // handle text messages
     // else {
@@ -263,7 +305,8 @@ if (isset($b_text)) {
             }
             saveData($data);
             
-            if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+            // if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+                if (!in_array($b_id, $db['admins'])) {
                 exit;
             }
             foreach ($item['answers'] as $index => $answer) {
