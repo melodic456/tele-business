@@ -4,6 +4,26 @@ $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
 $admin = "7374728124"; // userID of your account
 
 
+
+// Added Functions
+
+function loadData() {
+    $filePath = 'messages.json'; 
+    if (file_exists($filePath)) {
+        $jsonData = file_get_contents($filePath);
+        return json_decode($jsonData, true);
+    } else {
+        return []; 
+    }
+}
+
+// Function to save data back to the JSON file
+function saveData($data) {
+    $filePath = 'messages.json';
+    $jsonData = json_encode($data, JSON_PRETTY_PRINT);
+    file_put_contents($filePath, $jsonData);
+}
+
 // BOT
 function bot($method, $datas = [])
 {
@@ -190,48 +210,50 @@ if (isset($message) and $chat_id == $admin) {
 
 // $originalString = "Hello";
 // Handle messages to Bussiness Account
-$send_reply = "yes";
+// $send_reply = "yes";
 if (isset($b_text)) {
     foreach ($db['data'] as $item) {
         if ($item['text'] == $b_text) {
-            $user_messages = [];
-            if (isset($b_text)) {
-                $current_time = time();
-                $user_id = $b_chat_id;
-                if (!isset($user_messages[$user_id])) {
-                    $user_messages[$user_id] = [];
-                }
-                $user_messages[$user_id][] = ['text' => $b_text, 'time' => $current_time];
-                
-                
-                foreach ($user_messages[$user_id] as $index => $message) {
-                    if ($message['text'] === $b_text && $current_time - $message['time'] < 300) {
-                        // echo "Not ready";
-                        $send_reply = "no";
-                        // $originalString = "Hi";
-                        break;
+
+            $data = loadData();
+
+            // Check if the user already exists
+            if (isset($data[$b_chat_id])) {
+                $currentTime = time();
+            
+                // Check for duplicate messages within the last 5 minutes
+                foreach ($data[$b_chat_id] as $existingMessage) {
+                    $messageTime = strtotime($existingMessage['time']);
+                    $timeDifference = $currentTime - $messageTime;
+            
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= 300) { // 5 minutes = 300 seconds
+                        echo "Duplicate message detected. Please try again later.";
+                        exit; // Stop further processing
                     }
                 }
-                file_put_contents('user_messages.json', json_encode($user_messages));
+            
+                // No duplicates, append the new message
+                $data[$b_chat_id][] = [
+                    'message' => $b_text,
+                    'time' => date('Y-m-d H:i:s')
+                ];
+            } else {
+                // New user, create a new entry
+                $data[$b_chat_id] = [
+                    [
+                        'message' => $b_text,
+                        'time' => date('Y-m-d H:i:s')
+                    ]
+                ];
             }
+            saveData($data);
+            
 
-            // if ($send_reply === "no") {
-            //     break;
-            // }
-            // if ($send_reply === "no") {
-            //     break; // Skip sending a reply if the condition is met
-            // }
             foreach ($item['answers'] as $index => $answer) {
-                
-                    // The string has changed, so perform additional actions here
-                //     echo "The string has been modified!";
-                // } else {
-                    // echo "The string remains the same.";
-                
                 // check message type
                 switch ($answer["type"]) {
                     case "text":
-                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $send_reply === "no" ? $answer['content'] : "Not ready", 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'] . $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
                         break;
                     case "sticker":
                         bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
@@ -269,6 +291,10 @@ if (isset($b_text)) {
                 // }
             }
         }
+
+        // Save the updated data back to the file
+        
+        // }
     }
 }
 // $send_reply = "yes";
