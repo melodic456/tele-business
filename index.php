@@ -1,7 +1,8 @@
 <?php
 // TOKEN
 $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
-$admin = "7374728124"; // userID of your account
+// $admin = "7374728124"; // userID of your account
+$admin = ["7374728124", "715039642"]; // userID of your account
 
 
 
@@ -95,7 +96,9 @@ if(isset($message)){
     }
 }
 // strat message
-if (isset($message) and $chat_id == $admin) {
+// if (isset($message) and $chat_id == $admin) {
+if (isset($message) and in_array($chat_id, $admin)) {
+    // if (in_array($text, $db['admins'])) {
     // if ($text == "business_connection_id"){
     //     bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
     //     exit;
@@ -330,7 +333,7 @@ if (isset($b_text)) {
                 // check message type
                 switch ($answer["type"]) {
                     case "text":
-                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'] . $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
                         break;
                     case "sticker":
                         bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
