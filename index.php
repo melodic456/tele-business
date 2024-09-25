@@ -2,7 +2,7 @@
 // TOKEN
 $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
 // $admin = "7374728124"; // userID of your account
-$admin = ["7374728124", "715039642"]; // userID of your account
+// $admin = ["7374728124", "715039642"]; // userID of your account
 
 
 
@@ -86,6 +86,13 @@ if (isset($update)) {
 }
 // db
 $db =  json_decode(file_get_contents('db.json'), true);
+$admin = null;
+foreach ($db['admins'] as $admin_key => $admin_value) {
+    $admin[] = $admin_value;
+}
+
+
+
 $step = $db['step'];
 // keyboards
 $home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]], [['text' => "Add new Admins"]], [['text' => "Remove an Admin"]]]]);
