@@ -74,7 +74,7 @@ if (isset($update)) {
 $db =  json_decode(file_get_contents('db.json'), true);
 $step = $db['step'];
 // keyboards
-$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]]]]);
+$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]]]]);
 $back = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Back 🔙"]]]]);
 // ================================================ \\
 
@@ -109,6 +109,21 @@ if (isset($message) and $chat_id == $admin) {
             bot('sendMessage', ['chat_id' => $chat_id, 'text' => "auto-reply list is empty!", 'reply_markup' => $home]);
         }
     }
+    elseif ($text == 'Add Interval') {
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Enter the interval in seconds for the auto-reply to be sent", 'reply_markup' => $back]);
+        $db['step'] = "add-interval";
+        file_put_contents("db.json", json_encode($db));
+    }
+    elseif ($step == 'add-interval') {
+        $db['interval'] = $text;
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Interval set to {$text} seconds", 'reply_markup' => $home]);
+        $db['step'] = "";
+        file_put_contents("db.json", json_encode($db));
+    }
+    // handle text messages
+    // else {
+    //     bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Invalid command! ❌", 'reply_markup' => $home]);
+    // }
 
     // handle steps
     elseif ($step == 'add-1') {
@@ -226,7 +241,7 @@ if (isset($b_text)) {
                     $messageTime = strtotime($existingMessage['time']);
                     $timeDifference = $currentTime - $messageTime;
             
-                    if ($existingMessage['message'] === $b_text && $timeDifference <= 300) { // 5 minutes = 300 seconds
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= $db['interval']) { // 5 minutes = 300 seconds
                         echo "Duplicate message detected. Please try again later.";
                         exit; // Stop further processing
                     }
@@ -248,7 +263,9 @@ if (isset($b_text)) {
             }
             saveData($data);
             
-
+            if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+                exit;
+            }
             foreach ($item['answers'] as $index => $answer) {
                 // check message type
                 switch ($answer["type"]) {
