@@ -88,9 +88,18 @@ $step = $db['step'];
 $home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]], [['text' => "Add new Admins"]], [['text' => "Remove an Admin"]]]]);
 $back = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Back 🔙"]]]]);
 // ================================================ \\
-
+// ================================================ \\
+if(isset($message)){
+    if ($text == 'business_connection_id') {
+        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+    }
+}
 // strat message
 if (isset($message) and $chat_id == $admin) {
+    // if ($text == "business_connection_id"){
+    //     bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+    //     exit;
+    // }
 
     //handle text messages
     if ($text == '/start') {
@@ -269,6 +278,13 @@ if (isset($message) and $chat_id == $admin) {
 // Handle messages to Bussiness Account
 // $send_reply = "yes";
 if (isset($b_text)) {
+    // ================================================ \\
+// if(isset($message)){
+    if ($b_text == 'business_connection_id') {
+        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $b_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+    }
+// }
+    
     foreach ($db['data'] as $item) {
         if ($item['text'] == $b_text) {
 
@@ -306,7 +322,8 @@ if (isset($b_text)) {
             saveData($data);
             
             // if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
-                if (!in_array($b_id, $db['admins'])) {
+                
+            if (!in_array($b_id, $db['admins'])) {
                 exit;
             }
             foreach ($item['answers'] as $index => $answer) {
