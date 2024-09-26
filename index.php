@@ -131,7 +131,9 @@ if (isset($message) and in_array($chat_id, $admin)) {
     elseif ($text == 'remove auto reply 🚫') {
         if (count($db['data']) > 0) {
             foreach ($db['data'] as $item) {
-                $list .= "<code>{$item['text']}</code>\n---\n";
+                if ($item['user_id'] == $chat_id) {
+                    $list .= "<code>{$item['text']}</code>\n---\n";
+                }
             }
             bot('sendMessage', ['chat_id' => $chat_id, 'text' => $list, 'parse_mode' => 'html',]);
             bot('sendMessage', ['chat_id' => $chat_id, 'text' => "To remove an item from the auto-reply, copy and paste one of the above", 'reply_markup' => $back]);
