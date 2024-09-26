@@ -95,7 +95,7 @@ foreach ($db['admins'] as $admin_key => $admin_value) {
 
 $step = $db['step'];
 // keyboards
-$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]], [['text' => "Add new Admins"]], [['text' => "Remove an Admin"]]]]);
+$home = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Add auto reply ✉️"]], [['text' => "remove auto reply 🚫"]], [['text' => "Add Interval"]], [['text' => "Add new Admins"]], [['text' => "Remove an Admin"]], [['text' => "Show all Queries"]]]]);
 $back = json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Back 🔙"]]]]);
 // ================================================ \\
 // ================================================ \\
@@ -193,12 +193,20 @@ if (isset($message) and in_array($chat_id, $admin)) {
 
     // handle steps
     elseif ($step == 'add-1') {
-        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "✅ Successfully created.\n\nSend your content to answer this text (it can include any type of content such as: text, photo, video, gif, sticker, voice, etc.)", 'reply_markup' => $back]);
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "✅ Successfully created.\n\nEnter the interval in seconds for the auto-reply to be sent.", 'reply_markup' => $back]);
         $db['data'][] = [
             'text' => $text,
             'user_id' => $chat_id,
-            'answers' => []
+            'answers' => [],
+            'interval' => null // Add interval field with default value null
         ];
+        $db['step'] = "add-3";
+        file_put_contents("db.json", json_encode($db, JSON_UNESCAPED_UNICODE));
+    } elseif ($step == 'add-3') {
+        end($db['data']);
+        $last_key = key($db['data']);
+        $db['data'][$last_key]['interval'] = $text;
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "Interval set to {$text} seconds.\n\nSend your content to answer this text (it can include any type of content such as: text, photo, video, gif, sticker, voice, etc.)", 'reply_markup' => $back]);
         $db['step'] = "add-2";
         file_put_contents("db.json", json_encode($db, JSON_UNESCAPED_UNICODE));
     } elseif ($step == 'add-2') {
@@ -287,6 +295,15 @@ if (isset($message) and in_array($chat_id, $admin)) {
         }
         $db['step'] = "";
         file_put_contents("db.json", json_encode($db));
+    } elseif ($text == 'Show all Queries') {
+        $list = "";
+        foreach ($db['data'] as $item) {
+            if ($item['user_id'] == $chat_id) {
+                $list .= "<code>{$item['text']}</code>\n--->Interval: {$item['interval']}s\n---\n";
+            }
+        }
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => $list, 'parse_mode' => 'html',]);
+        bot('sendMessage', ['chat_id' => $chat_id, 'text' => "This is the list created by you.", 'reply_markup' => $back]);
     }
 }
 
@@ -322,6 +339,90 @@ if (isset($b_text)) {
         // if ((strpos($item['text'], $b_text) !== false) and $chat_id2 == $b_id) {
             // file_put_contents('chat_id.txt', $chat_id2);
             
+            $data = loadData();
+
+            // Check if the user already exists
+            if (isset($data[$b_chat_id])) {
+                $currentTime = time();
+            
+                // Check for duplicate messages within the last 5 minutes
+                foreach ($data[$b_chat_id] as $existingMessage) {
+                    $messageTime = strtotime($existingMessage['time']);
+                    $timeDifference = $currentTime - $messageTime;
+            
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
+                        echo "Duplicate message detected. Please try again later.";
+                        exit; // Stop further processing
+                    }
+                }
+            
+                // No duplicates, append the new message
+                $data[$b_chat_id][] = [
+                    'admin_id' => $b_id,
+                    'message' => $b_text,
+                    'time' => date('Y-m-d H:i:s')
+                ];
+            } else {
+                // New user, create a new entry
+                $data[$b_chat_id] = [
+                    [
+                        'admin_id' => $b_id,
+                        'message' => $b_text,
+                        'time' => date('Y-m-d H:i:s')
+                    ]
+                ];
+            }
+            saveData($data);
+            
+            // if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+                
+            // if (!in_array($b_id, $db['admins'])) {
+            //     exit;
+            // }
+            foreach ($item['answers'] as $index => $answer) {
+                // check message type
+                switch ($answer["type"]) {
+                    case "text":
+                        // if
+                        file_put_contents('answers.json', json_encode($answer['content']));
+                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        break;
+                    case "sticker":
+                        bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "photo":
+                        bot('sendPhoto', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'photo' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "video":
+                        bot('sendVideo', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'video' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "voice":
+                        bot('sendVoice', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'voice' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "file":
+                        bot('sendDocument', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'document' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "music":
+                        bot('sendAudio', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'audio' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "animation":
+                        bot('sendAnimation', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'animation' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "video_note":
+                        bot('sendVideoNote', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'video_note' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                }
+                // }
+            }
+        } elseif(preg_match('/\b' . preg_quote($b_text, '/') . '\b/i', $item['text']) and $chat_id2 == $b_id) {
             $data = loadData();
 
             // Check if the user already exists
@@ -405,7 +506,11 @@ if (isset($b_text)) {
                 }
                 // }
             }
-        } elseif(preg_match('/\b' . preg_quote($b_text, '/') . '\b/i', $item['text']) and $chat_id2 == $b_id) {
+
+        
+        } elseif (array_reduce(explode(' ', $b_text), function ($carry, $word) use ($item) {
+            return $carry || (strpos(strtolower($item['text']), strtolower($word)) !== false);
+        }, false)) {
             $data = loadData();
 
             // Check if the user already exists
