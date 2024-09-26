@@ -200,7 +200,7 @@ if (isset($message) and in_array($chat_id, $admin)) {
             'answers' => []
         ];
         $db['step'] = "add-2";
-        file_put_contents("db.json", json_encode($db));
+        file_put_contents("db.json", json_encode($db, JSON_UNESCAPED_UNICODE));
     } elseif ($step == 'add-2') {
         end($db['data']);
         $last_key = key($db['data']);
@@ -274,7 +274,7 @@ if (isset($message) and in_array($chat_id, $admin)) {
                 'content' => $content,
                 'caption' => $caption
             ];
-            file_put_contents("db.json", json_encode($db));
+            file_put_contents("db.json", json_encode($db, JSON_UNESCAPED_UNICODE));
         } else {
             bot('sendMessage', ['chat_id' => $chat_id, 'text' => "There was a problem with the content you sent, please send another content", 'reply_markup' =>  json_encode(['resize_keyboard' => true, 'keyboard' => [[['text' => "Done!"]]]])]);
         }
@@ -318,9 +318,94 @@ if (isset($b_text)) {
             }
         }
         // if ($item['text'] == $b_text and $item['user_id'] == $chat_id2) {
-        if ($item['text'] == $b_text and $chat_id2 == $b_id) {
+        if (($item['text'] === $b_text) and $chat_id2 == $b_id) {
+        // if ((strpos($item['text'], $b_text) !== false) and $chat_id2 == $b_id) {
             // file_put_contents('chat_id.txt', $chat_id2);
             
+            $data = loadData();
+
+            // Check if the user already exists
+            if (isset($data[$b_chat_id])) {
+                $currentTime = time();
+            
+                // Check for duplicate messages within the last 5 minutes
+                foreach ($data[$b_chat_id] as $existingMessage) {
+                    $messageTime = strtotime($existingMessage['time']);
+                    $timeDifference = $currentTime - $messageTime;
+            
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= $db['interval']) { // 5 minutes = 300 seconds
+                        echo "Duplicate message detected. Please try again later.";
+                        exit; // Stop further processing
+                    }
+                }
+            
+                // No duplicates, append the new message
+                $data[$b_chat_id][] = [
+                    'admin_id' => $b_id,
+                    'message' => $b_text,
+                    'time' => date('Y-m-d H:i:s')
+                ];
+            } else {
+                // New user, create a new entry
+                $data[$b_chat_id] = [
+                    [
+                        'admin_id' => $b_id,
+                        'message' => $b_text,
+                        'time' => date('Y-m-d H:i:s')
+                    ]
+                ];
+            }
+            saveData($data);
+            
+            // if ($b_id !== "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+                
+            // if (!in_array($b_id, $db['admins'])) {
+            //     exit;
+            // }
+            foreach ($item['answers'] as $index => $answer) {
+                // check message type
+                switch ($answer["type"]) {
+                    case "text":
+                        // if
+                        file_put_contents('answers.json', json_encode($answer['content']));
+                        bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        break;
+                    case "sticker":
+                        bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "photo":
+                        bot('sendPhoto', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'photo' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "video":
+                        bot('sendVideo', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'video' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "voice":
+                        bot('sendVoice', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'voice' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "file":
+                        bot('sendDocument', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'document' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "music":
+                        bot('sendAudio', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'audio' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "animation":
+                        bot('sendAnimation', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'animation' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                    case "video_note":
+                        bot('sendVideoNote', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'video_note' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+
+                        break;
+                }
+                // }
+            }
+        } elseif((strpos($item['text'], $b_text) !== false) and $chat_id2 == $b_id) {
             $data = loadData();
 
             // Check if the user already exists
