@@ -405,7 +405,7 @@ if (isset($b_text)) {
                 }
                 // }
             }
-        } elseif((strpos($item['text'], $b_text) !== false) and $chat_id2 == $b_id) {
+        } elseif(preg_match('/\b' . preg_quote($b_text, '/') . '\b/i', $item['text']) and $chat_id2 == $b_id) {
             $data = loadData();
 
             // Check if the user already exists
