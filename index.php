@@ -8,6 +8,33 @@ $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
 
 // Added Functions
 
+function findMatchingWords($sentence1, $sentence2) {
+    $words1 = explode(' ', $sentence1);
+    $words2 = explode(' ', $sentence2);
+
+    $matchingWords = [];
+    foreach ($words1 as $word1) {
+        if (strlen($word1) <= 1) {
+            continue; // Skip single-letter words
+        }
+
+        foreach ($words2 as $word2) {
+            if (strlen($word2) <= 1) {
+                continue; // Skip single-letter words
+            }
+            // echo $word1 . "\n";
+            // echo $word2 . "\n";
+            if (strtolower($word1) === strtolower($word2)) {
+                // echo $word1 . $word2;
+                $matchingWords[] = $word1;
+                // Do not break here, continue searching for other potential matches
+            }
+        }
+    }
+
+    return $matchingWords;
+}
+
 function removeElementFromArray(&$array, $valueToRemove) {
     $key = array_search($valueToRemove, $array);
     if ($key !== false) {
@@ -424,6 +451,7 @@ if (isset($b_text)) {
             }
         } elseif(preg_match('/\b' . preg_quote($b_text, '/') . '\b/i', $item['text']) and $chat_id2 == $b_id) {
             $data = loadData();
+            file_put_contents('1st.json', json_encode($b_text));
 
             // Check if the user already exists
             if (isset($data[$b_chat_id])) {
@@ -508,15 +536,18 @@ if (isset($b_text)) {
             }
 
         
-        } elseif (array_reduce(explode(' ', $b_text), function ($carry, $word) use ($item) {
-            return $carry || (strpos(strtolower($item['text']), strtolower($word)) !== false);
-        }, false) and $chat_id2 == $b_id) {
+        } elseif (!empty(findMatchingWords($b_text, $item['text'])) and $chat_id2 == $b_id) {
+        //     array_reduce(explode(' ', $b_text), function ($carry, $word) use ($item) {
+        //     return $carry || (strpos(strtolower($item['text']), strtolower($word)) !== false);
+        // }, false)
+        
+        
             $data = loadData();
-
+            file_put_contents('2nd.json', json_encode($b_text));
             // Check if the user already exists
             if (isset($data[$b_chat_id])) {
                 $currentTime = time();
-            
+                
                 // Check for duplicate messages within the last 5 minutes
                 foreach ($data[$b_chat_id] as $existingMessage) {
                     $messageTime = strtotime($existingMessage['time']);
