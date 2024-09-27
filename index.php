@@ -462,7 +462,7 @@ if (isset($b_text)) {
                     $messageTime = strtotime($existingMessage['time']);
                     $timeDifference = $currentTime - $messageTime;
             
-                    if ($existingMessage['message'] === $b_text && $timeDifference <= $db['interval']) { // 5 minutes = 300 seconds
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
                         echo "Duplicate message detected. Please try again later.";
                         exit; // Stop further processing
                     }
@@ -543,7 +543,7 @@ if (isset($b_text)) {
         
         
             $data = loadData();
-            file_put_contents('2nd.json', json_encode($b_text));
+            // file_put_contents('2nd.json', json_encode($b_text));
             // Check if the user already exists
             if (isset($data[$b_chat_id])) {
                 $currentTime = time();
@@ -553,7 +553,7 @@ if (isset($b_text)) {
                     $messageTime = strtotime($existingMessage['time']);
                     $timeDifference = $currentTime - $messageTime;
             
-                    if ($existingMessage['message'] === $b_text && $timeDifference <= $db['interval']) { // 5 minutes = 300 seconds
+                    if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
                         echo "Duplicate message detected. Please try again later.";
                         exit; // Stop further processing
                     }
