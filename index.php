@@ -87,7 +87,7 @@ if (isset($update)) {
         @$caption = $message->caption;
         //file id
         @$sticker_id = $message->sticker->file_id;
-        file_put_contents('business_message.json', json_encode($update));
+        // file_put_contents('business_message.json', json_encode($update));
 //        @$photo_id = $message->photo[count($message->photo) - 1]->file_id ?? null;
 	@$photo_id = null;
 	if (isset($message->photo) && is_array($message->photo)) {
@@ -108,6 +108,7 @@ if (isset($update)) {
         @$b_text = $b_message->text;
         @$b_message_id = $b_message->message_id;
         @$b_chat_id = $b_message->chat->id;
+        @$b_from_id = $b_message->from->id;
         file_put_contents('business_message.json', json_encode($update)); // Save b_message to file
     }
 }
@@ -352,12 +353,23 @@ if (isset($b_text)) {
         //     if (isset($message2)) {
         //         // @$text = $message->text;
         //         @$chat_id2 = $message2->chat->id;
+        foreach ($db['admins'] as $admin_key => $admin_value) {
+            if ($admin_value == $item['user_id']) {
+                $chat_id2 = $admin_key;
+                if($item['user_id'] == $b_from_id){
+                    exit;
+                }
+                // break;
+            }
+        }
         // $b_id
         $chat_id2 = null;
         foreach ($db['admins'] as $admin_key => $admin_value) {
             if ($admin_value == $item['user_id']) {
                 $chat_id2 = $admin_key;
-                
+                if($item['user_id'] == $b_chat_id){
+                    exit;
+                }
                 break;
             }
         }
@@ -411,8 +423,14 @@ if (isset($b_text)) {
                 switch ($answer["type"]) {
                     case "text":
                         // if
-                        file_put_contents('answers.json', json_encode($answer['content']));
+                        
                         bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        // if($b_id == "8BVyU4oFSVf6AQAAvTozMBwbhsA"){
+                        //     file_put_contents('answers.json', file_get_contents('answers.json') . "\n" . $b_chat_id);
+                        //     bot('sendMessage', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'text' => $b_chat_id, 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
+                        // } else {
+
+                        // }
                         break;
                     case "sticker":
                         bot('sendSticker', ['business_connection_id' => $b_id, 'chat_id' => $b_chat_id, 'caption' => $answer['caption'], 'sticker' => $answer['content'], 'parse_mode' => "html", 'disable_web_page_preview' => true, 'reply_parameters' => $index == 0 ? json_encode(['message_id' => $b_message_id]) : null]);
