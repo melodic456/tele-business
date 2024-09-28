@@ -654,3 +654,26 @@ if (isset($b_text)) {
 // }
 // }
 // $send_reply = "yes";
+
+$messages = json_decode(file_get_contents('messages.json'), true);
+$currentTime = time();
+$threeHoursAgo = $currentTime - (3 * 60 * 60); // Calculate 3 hours ago
+
+// Iterate through each index (conversation)
+foreach ($messages as $key => &$message) {
+    // Iterate through each message within the index
+    foreach ($message as $index => &$item) {
+        $time = strtotime($item['time']);
+        if ($time < $threeHoursAgo) {
+            // Remove the message if it's older than 3 hours
+            unset($message[$index]); 
+        }
+    }
+    // If all messages in an index are removed, remove the index itself
+    if (empty($message)) {
+        unset($messages[$key]); 
+    }
+}
+
+$updatedJson = json_encode($messages, JSON_PRETTY_PRINT);
+file_put_contents('messages.json', $updatedJson);
