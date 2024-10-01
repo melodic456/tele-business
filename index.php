@@ -8,6 +8,79 @@ $token = "7280128962:AAH1_W-4o6I1z6-00nnSJ9v_-drn2PFBqD0"; // bot token
 
 // Added Functions
 
+// ... existing code ...
+
+function checkCommonWord($sentence1, $sentence2) {
+    $words1 = explode(" ", strtolower($sentence1));
+    $words2 = explode(" ", strtolower($sentence2));
+
+    // Filter out words with only one character
+    $words1 = array_filter($words1, function ($word) {
+        return strlen($word) > 1;
+    });
+    $words2 = array_filter($words2, function ($word) {
+        return strlen($word) > 1;
+    });
+
+    $commonWords = array_intersect($words1, $words2);
+
+    return count($commonWords) > 0;
+}
+
+
+function findMatchingWords2($sentence1, $sentence2) {
+    $words1 = explode(' ', strtolower($sentence1));
+    $words2 = explode(' ', strtolower($sentence2));
+
+    $matchingWords = [];
+    $fullMatch = false;
+
+    // Check for full sentence match
+    if (strpos(strtolower($sentence2), strtolower($sentence1)) !== false ||
+        strpos(strtolower($sentence1), strtolower($sentence2)) !== false) {
+        $fullMatch = true;
+    }
+
+    // Check for individual word matches
+    foreach ($words1 as $word1) {
+        if (strlen($word1) <= 1) {
+            continue; // Skip single-letter words
+        }
+
+        foreach ($words2 as $word2) {
+            if (strlen($word2) <= 1) {
+                continue; // Skip single-letter words
+            }
+            if ($word1 === $word2) {
+                $matchingWords[] = $word1;
+            }
+        }
+    }
+
+    // Check for consecutive word matches
+    $consecutiveMatches = [];
+    $maxConsecutive = 0;
+    $currentConsecutive = 0;
+    for ($i = 0; $i < count($words1); $i++) {
+        if (in_array($words1[$i], $words2)) {
+            $currentConsecutive++;
+            if ($currentConsecutive > $maxConsecutive) {
+                $maxConsecutive = $currentConsecutive;
+                $consecutiveMatches = array_slice($words1, $i - $currentConsecutive + 1, $currentConsecutive);
+            }
+        } else {
+            $currentConsecutive = 0;
+        }
+    }
+
+    return [
+        'fullMatch' => $fullMatch,
+        'individualMatches' => $matchingWords,
+        'consecutiveMatches' => $consecutiveMatches
+    ];
+}
+
+// ... rest of the code ...
 function findMatchingWords($sentence1, $sentence2) {
     $words1 = explode(' ', $sentence1);
     $words2 = explode(' ', $sentence2);
@@ -485,6 +558,27 @@ if (isset($b_text)) {
                         exit; // Stop further processing
                     }
                 }
+
+                            // ... existing code ...
+
+                foreach ($data[$b_chat_id] as $existingMessage) {
+                    $messageTime = strtotime($existingMessage['time']);
+                    $timeDifference = $currentTime - $messageTime;
+                    
+                    file_put_contents('b_text1.txt', checkCommonWord($existingMessage['message'], $b_text));
+                    // if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
+                    //     echo "Duplicate message detected. Please try again later.";
+                    //     exit; // Stop further processing
+                    // }
+                    
+                    if (checkCommonWord($existingMessage['message'], $b_text) && $timeDifference <= $item['interval']){
+                        echo "Duplicate message detected. Please try again later.";
+
+                        exit; // Stop further processing
+                    }
+                }
+
+                // ... rest of the code ...
             
                 // No duplicates, append the new message
                 $data[$b_chat_id][] = [
@@ -573,6 +667,23 @@ if (isset($b_text)) {
             
                     if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
                         echo "Duplicate message detected. Please try again later.";
+                        exit; // Stop further processing
+                    }
+                }
+
+                foreach ($data[$b_chat_id] as $existingMessage) {
+                    $messageTime = strtotime($existingMessage['time']);
+                    $timeDifference = $currentTime - $messageTime;
+                    
+                    file_put_contents('b_text1.txt', checkCommonWord($existingMessage['message'], $b_text));
+                    // if ($existingMessage['message'] === $b_text && $timeDifference <= $item['interval']) { // 5 minutes = 300 seconds
+                    //     echo "Duplicate message detected. Please try again later.";
+                    //     exit; // Stop further processing
+                    // }
+                    
+                    if (checkCommonWord($existingMessage['message'], $b_text) && $timeDifference <= $item['interval']){
+                        echo "Duplicate message detected. Please try again later.";
+
                         exit; // Stop further processing
                     }
                 }
