@@ -576,6 +576,11 @@ if (isset($b_text)) {
 
                         exit; // Stop further processing
                     }
+                    if (checkCommonWord($existingMessage['message'], $item['text']) && $timeDifference <= $item['interval']){
+                        echo "Duplicate message detected. Please try again later.";
+
+                        exit; // Stop further processing
+                    }
                 }
 
                 // ... rest of the code ...
@@ -682,6 +687,12 @@ if (isset($b_text)) {
                     // }
                     
                     if (checkCommonWord($existingMessage['message'], $b_text) && $timeDifference <= $item['interval']){
+                        echo "Duplicate message detected. Please try again later.";
+
+                        exit; // Stop further processing
+                    }
+
+                    if (checkCommonWord($existingMessage['message'], $item['text']) && $timeDifference <= $item['interval']){
                         echo "Duplicate message detected. Please try again later.";
 
                         exit; // Stop further processing
